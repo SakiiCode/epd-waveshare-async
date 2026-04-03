@@ -463,7 +463,9 @@ where
         command: Command,
         data: &[u8],
     ) -> Result<(), HW::Error> {
-        self.hw.send(spi, command.register(), data).await
+        self.hw
+            .send(spi, command.register(), data.iter().copied())
+            .await
     }
 }
 
@@ -535,7 +537,7 @@ where
                 .send(
                     spi,
                     0x37,
-                    &[0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00],
+                    [0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00],
                 )
                 .await?;
 

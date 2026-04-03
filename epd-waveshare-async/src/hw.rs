@@ -62,14 +62,12 @@ pub(crate) trait BusyWait: ErrorHw {
 }
 
 /// Provides the ability to send <command> then <data> style communications.
-pub(crate) trait CommandDataSend: SpiHw + ErrorHw {
+pub(crate) trait CommandDataSend<I>: SpiHw + ErrorHw
+where
+    I: IntoIterator<Item = u8>,
+{
     /// Send the following command and data to the display. Waits until the display is no longer busy before sending.
-    async fn send(
-        &mut self,
-        spi: &mut Self::Spi,
-        command: u8,
-        data: &[u8],
-    ) -> Result<(), Self::Error>;
+    async fn send(&mut self, spi: &mut Self::Spi, command: u8, data: I) -> Result<(), Self::Error>;
 }
 
 impl<HW> BusyWait for HW
@@ -98,28 +96,24 @@ where
     }
 }
 
-impl<HW> CommandDataSend for HW
+impl<HW, I> CommandDataSend<I> for HW
 where
     HW: DcHw + BusyHw + BusyWait + SpiHw + ErrorHw,
     HW::Error: From<<HW::Spi as SpiErrorType>::Error>
         + From<<HW::Dc as PinErrorType>::Error>
         + From<<HW::Busy as PinErrorType>::Error>,
+    I: IntoIterator<Item = u8>,
 {
-    async fn send(
-        &mut self,
-        spi: &mut Self::Spi,
-        command: u8,
-        data: &[u8],
-    ) -> Result<(), Self::Error> {
+    async fn send(&mut self, spi: &mut Self::Spi, command: u8, data: I) -> Result<(), Self::Error> {
         trace!("Sending EPD command: {:?}", command);
         self.wait_if_busy().await?;
 
         self.dc().set_low()?;
         spi.write(&[command]).await?;
 
-        if !data.is_empty() {
-            self.dc().set_high()?;
-            spi.write(data).await?;
+        self.dc().set_high()?;
+        for byte in data {
+            spi.write(&[byte]).await?;
         }
 
         Ok(())
