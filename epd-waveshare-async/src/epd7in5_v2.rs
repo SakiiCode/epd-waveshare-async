@@ -10,7 +10,7 @@ use crate::{
     buffer::{binary_buffer_length, BinaryBuffer, BufferView, Gray2SplitBuffer},
     hw::{BusyHw, BusyWait, CommandDataSend as _, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
     log::debug,
-    DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake,
+    DisplayPartial, DisplaySimple, Displayable, Reset, Sleep,
 };
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -413,13 +413,13 @@ where
     HW: ResetHw + DelayHw + ErrorHw,
     HW::Error: From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, StateUninitialized>;
+    type DisplayOut = Epd7in5<HW, W>;
 
-    async fn reset(mut self) -> Result<Self::DisplayOut, HW::Error> {
-        reset_impl(&mut self.hw).await?;
+    async fn reset(self) -> Result<Self::DisplayOut, HW::Error> {
+        // will do reset inside init()
         Ok(Epd7in5 {
             hw: self.hw,
-            state: StateUninitialized(),
+            state: self.state.wake_state,
         })
     }
 }
@@ -431,7 +431,7 @@ where
         + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, StateAsleep<STATE>>;
+    type DisplayOut = Epd7in5<HW, StateAsleep<StateUninitialized>>;
 
     async fn sleep(mut self, spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
         debug!("Sleeping EPD");
@@ -441,24 +441,9 @@ where
         Ok(Epd7in5 {
             hw: self.hw,
             state: StateAsleep {
-                wake_state: self.state,
+                wake_state: StateUninitialized(),
             },
         })
-    }
-}
-
-impl<HW, W: StateAwake> Wake<HW::Spi, HW::Error> for Epd7in5<HW, StateAsleep<W>>
-where
-    HW: BusyHw + DcHw + ResetHw + DelayHw + SpiHw + ErrorHw,
-    HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
-        + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
-        + From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>
-        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
-{
-    type DisplayOut = Epd7in5<HW, StateReady>;
-    async fn wake(self, spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
-        debug!("Waking EPD");
-        self.reset().await?.init(spi, RefreshMode::Full).await
     }
 }
 

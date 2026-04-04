@@ -27,7 +27,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyle};
 use epd_waveshare_async::epd7in5_v2::{self, new_gray2_buffer, Epd7in5, RefreshMode};
-use epd_waveshare_async::{DisplayPartial, DisplaySimple, Displayable, Sleep, Wake};
+use epd_waveshare_async::{DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake};
 use rp2350_samples::*;
 use static_cell::StaticCell;
 
@@ -218,7 +218,7 @@ async fn main(_spawner: Spawner) {
     Timer::after_secs(2).await;
 
     info!("Waking EPD");
-    let mut epd = expect!(epd.wake(&mut spi).await, "Failed to wake EPD");
+    let mut epd = expect!(epd.reset().await.unwrap().init(&mut spi, RefreshMode::Partial).await, "Failed to wake EPD");
     Timer::after_secs(1).await;
 
     info!("Displaying text");
