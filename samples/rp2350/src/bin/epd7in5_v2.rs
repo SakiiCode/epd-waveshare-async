@@ -117,7 +117,7 @@ async fn main(_spawner: Spawner) {
 
     info!("Initializing EPD");
     let mut epd = expect!(
-        epd.init(&mut spi, RefreshMode::Full).await,
+        epd.init(&mut spi, RefreshMode::FullSlow).await,
         "Failed to initialize EPD"
     );
 
@@ -132,10 +132,7 @@ async fn main(_spawner: Spawner) {
     );
     Timer::after_secs(4).await;
 
-    // Clear the base image for later partial refresh.
-    epd.write_base_framebuffer(&mut spi, &buffer).await.unwrap();
-
-    epd.set_refresh_mode(&mut spi, RefreshMode::FullSlow)
+    epd.set_refresh_mode(&mut spi, RefreshMode::Full)
         .await
         .unwrap();
 
@@ -157,12 +154,6 @@ async fn main(_spawner: Spawner) {
     );
     Timer::after_secs(5).await;
 
-    info!("Changing to partial refresh mode");
-    expect!(
-        epd.set_refresh_mode(&mut spi, RefreshMode::Partial).await,
-        "Failed to set refresh mode"
-    );
-
     info!("Displaying check buffer");
     let before_buffer_draw = Instant::now();
     // Clear first.
@@ -171,7 +162,7 @@ async fn main(_spawner: Spawner) {
         .unwrap();
     let mut top_left = Point::new(0, 0);
     let buffer_width = buffer.bounding_box().size.width;
-    let mut box_size = buffer_width;
+    let mut box_size = 192;
     let mut color = BinaryColor::Off;
     while box_size > 0 {
         for _ in 0..(buffer_width / box_size) {
@@ -199,6 +190,23 @@ async fn main(_spawner: Spawner) {
         "Failed to display check buffer"
     );
     Timer::after_secs(4).await;
+
+    info!("Clearing screen");
+    buffer
+        .fill_solid(&buffer.bounding_box(), BinaryColor::On)
+        .unwrap();
+    info!("Displaying white buffer");
+    expect!(
+        epd.display_framebuffer(&mut spi, &buffer).await,
+        "Failed to display buffer"
+    );
+    Timer::after_secs(5).await;
+
+    info!("Changing to partial refresh mode");
+    expect!(
+        epd.set_refresh_mode(&mut spi, RefreshMode::Partial).await,
+        "Failed to set refresh mode"
+    );
 
     info!("Displaying black text on white");
     buffer.clear(BinaryColor::On).unwrap();
@@ -253,14 +261,14 @@ async fn main(_spawner: Spawner) {
     info!("Display 4-color grayscale");
     let mut gray_buffer = new_gray2_buffer();
     let square_size = Size::new(
-        epd7in5_v2::DISPLAY_HEIGHT as u32 / 3,
-        epd7in5_v2::DISPLAY_HEIGHT as u32 / 3,
+        96,
+        96,
     );
-    let square_step = Size::new(square_size.width, square_size.height);
+    let square_step = Size::new(square_size.width / 2, square_size.height);
     let mut start = Point::new(0, 0);
     for luma in 0..4 {
         gray_buffer
-            .fill_solid(&Rectangle::new(start, square_size), Gray2::new(!luma))
+            .fill_solid(&Rectangle::new(start, square_size), Gray2::new(luma))
             .unwrap();
         start += square_step;
     }

@@ -221,7 +221,7 @@ where
         spi: &mut HW::Spi,
         mode: RefreshMode,
     ) -> Result<Epd7in5<HW, StateReady>, HW::Error> {
-        debug!("Initialising display");
+        debug!("Initializing display to {}", mode);
         self = self.reset().await?;
 
         let mut epd = Epd7in5 {

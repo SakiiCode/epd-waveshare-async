@@ -269,7 +269,7 @@ where
         spi: &mut HW::Spi,
         mode: RefreshMode,
     ) -> Result<Epd2In9<HW, StateReady>, HW::Error> {
-        debug!("Initialising display");
+        debug!("Initializing display to {}", mode);
         self = self.reset().await?;
 
         // Reset all configurations to default.
