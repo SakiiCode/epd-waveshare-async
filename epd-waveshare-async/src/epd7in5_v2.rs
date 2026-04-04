@@ -67,8 +67,8 @@ pub const RECOMMENDED_SPI_POLARITY: Polarity = Polarity::IdleLow;
 /// The default pin state that indicates the display is busy.
 pub const DEFAULT_BUSY_WHEN: PinState = PinState::Low;
 
-/// Low-level commands for the Epd2In9 v2 display. You probably want to use the other methods
-/// exposed on the [Epd2In9V2] for most operations, but can send commands directly with [Epd2In9V2::send] for low-level
+/// Low-level commands for the Epd7in5 v2 display. You probably want to use the other methods
+/// exposed on the [Epd7in5] for most operations, but can send commands directly with [Epd7in5::send] for low-level
 /// control or experimentation.
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,18 +125,18 @@ impl Command {
     }
 }
 
-/// The length of the underlying buffer used by [Epd2In9V2].
+/// The length of the underlying buffer used by [Epd7in5].
 pub const BINARY_BUFFER_LENGTH: usize =
     binary_buffer_length(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32));
-/// The buffer type used by [Epd2In9V2].
-pub type Epd7In5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
-/// Constructs a new binary buffer for use with the [Epd2In9V2] display.
-pub fn new_binary_buffer() -> Epd7In5BinaryBuffer {
-    Epd7In5BinaryBuffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
+/// The buffer type used by [Epd7in5].
+pub type Epd7in5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
+/// Constructs a new binary buffer for use with the [Epd7in5] display.
+pub fn new_binary_buffer() -> Epd7in5BinaryBuffer {
+    Epd7in5BinaryBuffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
-pub type Epd7In5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
-pub fn new_gray2_buffer() -> Epd7In5Gray2Buffer {
-    Epd7In5Gray2Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
+pub type Epd7in5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
+pub fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
+    Epd7in5Gray2Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 
 /// Controls v2 of the 7.5" Waveshare e-paper display.
