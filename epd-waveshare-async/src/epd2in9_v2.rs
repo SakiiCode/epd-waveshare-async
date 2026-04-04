@@ -463,9 +463,12 @@ where
         command: Command,
         data: &[u8],
     ) -> Result<(), HW::Error> {
-        self.hw
-            .send(spi, command.register(), data.iter().copied())
-            .await
+        let iter = if data.is_empty() {
+            None
+        } else {
+            Some(data.iter().copied())
+        };
+        self.hw.send(spi, command.register(), iter).await
     }
 }
 
@@ -537,7 +540,7 @@ where
                 .send(
                     spi,
                     0x37,
-                    [0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00],
+                    Some([0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00]),
                 )
                 .await?;
 

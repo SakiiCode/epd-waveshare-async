@@ -65,7 +65,7 @@ pub const RECOMMENDED_SPI_PHASE: Phase = Phase::CaptureOnFirstTransition;
 /// on the rising edge.
 pub const RECOMMENDED_SPI_POLARITY: Polarity = Polarity::IdleLow;
 /// The default pin state that indicates the display is busy.
-pub const DEFAULT_BUSY_WHEN: PinState = PinState::High;
+pub const DEFAULT_BUSY_WHEN: PinState = PinState::Low;
 
 /// Low-level commands for the Epd2In9 v2 display. You probably want to use the other methods
 /// exposed on the [Epd2In9V2] for most operations, but can send commands directly with [Epd2In9V2::send] for low-level
@@ -73,8 +73,8 @@ pub const DEFAULT_BUSY_WHEN: PinState = PinState::High;
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
-    PanelSetting = 0x00,
-    PowerSetting = 0x01,
+    PanelSet = 0x00,
+    PowerSet = 0x01,
     PowerOff = 0x02,
     PowerOffSequenceSet = 0x03,
     PowerOn = 0x04,
@@ -144,7 +144,7 @@ pub fn new_gray2_buffer() -> Epd7In5Gray2Buffer {
 /// * [datasheet](https://files.waveshare.com/upload/6/60/7.5inch_e-Paper_V2_Specification.pdf)
 /// * [sample code](https://github.com/waveshareteam/e-Paper/blob/master/Arduino_R4/src/e-Paper/EPD_7in5_V2.cpp)
 ///
-/// The display has a portrait orientation. This display supports either
+/// The display has a landscape orientation. This display supports either
 /// [embedded_graphics::pixelcolor::BinaryColor] or [embedded_graphics::pixelcolor::Gray2] (TODO),
 /// depending on the display mode.
 ///
@@ -249,18 +249,22 @@ where
         command: Command,
         data: &[u8],
     ) -> Result<(), HW::Error> {
-        self.hw
-            .send(spi, command.register(), data.iter().copied())
-            .await
+        let iter = if data.is_empty() {
+            None
+        } else {
+            Some(data.iter().copied())
+        };
+        self.hw.send(spi, command.register(), iter).await
     }
 }
 
 impl<HW> Epd7in5<HW, StateReady>
 where
-    HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
+    HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw + ResetHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
-        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
+        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>
+        + From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
     /// Sets the refresh mode.
     pub async fn set_refresh_mode(
@@ -272,6 +276,7 @@ where
             Ok(())
         } else {
             debug!("Changing refresh mode to {:?}", mode);
+            reset_impl(&mut self.hw).await?;
             self.set_refresh_mode_impl(spi, mode).await?;
             Ok(())
         }
@@ -285,7 +290,7 @@ where
         match mode {
             RefreshMode::Full => {
                 // PANEL SETTING
-                self.send(spi, Command::PanelSetting, &[0x1F]).await?;
+                self.send(spi, Command::PanelSet, &[0x1F]).await?;
 
                 // VCOM DATA INTERVAL
                 self.send(spi, Command::VCOMDataInterval, &[0x10, 0x07])
@@ -306,7 +311,7 @@ where
             }
             RefreshMode::FullSlow => {
                 // POWER SETTING
-                self.send(spi, Command::PowerSetting, &[0x07, 0x07, 0x3F, 0x3F])
+                self.send(spi, Command::PowerSet, &[0x07, 0x07, 0x3F, 0x3F])
                     .await?;
 
                 // BOOSTER SOFT START
@@ -317,6 +322,9 @@ where
                 self.send(spi, Command::PowerOn, &[]).await?;
                 self.hw.delay().delay_ms(100).await;
                 self.hw.wait_if_busy().await?;
+
+                // PANEL SETTING
+                self.send(spi, Command::PanelSet, &[0x1F]).await?;
 
                 // RESOLUTION SETTING (TRES)
                 self.send(spi, Command::ResolutionSet, &[0x03, 0x20, 0x01, 0xE0])
@@ -336,7 +344,7 @@ where
             }
             RefreshMode::Partial => {
                 // PANEL SETTING
-                self.send(spi, Command::PanelSetting, &[0x1F]).await?;
+                self.send(spi, Command::PanelSet, &[0x1F]).await?;
 
                 // POWER ON
                 self.send(spi, Command::PowerOn, &[]).await?;
@@ -349,7 +357,7 @@ where
             }
             RefreshMode::Gray2 => {
                 // PANEL SETTING
-                self.send(spi, Command::PanelSetting, &[0x1F]).await?;
+                self.send(spi, Command::PanelSet, &[0x1F]).await?;
 
                 // VCOM DATA INTERVAL
                 self.send(spi, Command::VCOMDataInterval, &[0x10, 0x07])
@@ -378,11 +386,12 @@ where
     HW::Error: From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
     debug!("Resetting EPD");
-    // Assume reset is already high.
+    hw.reset().set_high()?;
+    hw.delay().delay_ms(20).await;
     hw.reset().set_low()?;
     hw.delay().delay_ms(2).await;
     hw.reset().set_high()?;
-    hw.delay().delay_ms(20).await;
+    hw.delay().delay_ms(200).await;
     Ok(())
 }
 
@@ -404,13 +413,13 @@ where
     HW: ResetHw + DelayHw + ErrorHw,
     HW::Error: From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, W>;
+    type DisplayOut = Epd7in5<HW, StateUninitialized>;
 
     async fn reset(mut self) -> Result<Self::DisplayOut, HW::Error> {
         reset_impl(&mut self.hw).await?;
         Ok(Epd7in5 {
             hw: self.hw,
-            state: self.state.wake_state,
+            state: StateUninitialized(),
         })
     }
 }
@@ -446,10 +455,10 @@ where
         + From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, W>;
-    async fn wake(self, _spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
+    type DisplayOut = Epd7in5<HW, StateReady>;
+    async fn wake(self, spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
         debug!("Waking EPD");
-        self.reset().await
+        self.reset().await?.init(spi, RefreshMode::Full).await
     }
 }
 
@@ -498,7 +507,7 @@ where
             .send(
                 spi,
                 Command::DisplayStartTrans2 as u8,
-                data.iter().map(|px| !*px),
+                Some(data.iter().map(|px| !*px)),
             )
             .await?;
         Ok(())

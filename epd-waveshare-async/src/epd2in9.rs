@@ -338,9 +338,12 @@ where
         data: &[u8],
     ) -> Result<(), HW::Error> {
         use crate::hw::CommandDataSend;
-        self.hw
-            .send(spi, command.register(), data.iter().copied())
-            .await
+        let iter = if data.is_empty() {
+            None
+        } else {
+            Some(data.iter().copied())
+        };
+        self.hw.send(spi, command.register(), iter).await
     }
 }
 

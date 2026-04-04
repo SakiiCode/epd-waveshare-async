@@ -67,7 +67,12 @@ where
     I: IntoIterator<Item = u8>,
 {
     /// Send the following command and data to the display. Waits until the display is no longer busy before sending.
-    async fn send(&mut self, spi: &mut Self::Spi, command: u8, data: I) -> Result<(), Self::Error>;
+    async fn send(
+        &mut self,
+        spi: &mut Self::Spi,
+        command: u8,
+        iter: Option<I>,
+    ) -> Result<(), Self::Error>;
 }
 
 impl<HW> BusyWait for HW
@@ -104,16 +109,23 @@ where
         + From<<HW::Busy as PinErrorType>::Error>,
     I: IntoIterator<Item = u8>,
 {
-    async fn send(&mut self, spi: &mut Self::Spi, command: u8, data: I) -> Result<(), Self::Error> {
-        trace!("Sending EPD command: {:?}", command);
+    async fn send(
+        &mut self,
+        spi: &mut Self::Spi,
+        command: u8,
+        iter: Option<I>,
+    ) -> Result<(), Self::Error> {
+        trace!("Sending EPD command: 0x{:02x}", command);
         self.wait_if_busy().await?;
 
         self.dc().set_low()?;
         spi.write(&[command]).await?;
 
-        self.dc().set_high()?;
-        for byte in data {
-            spi.write(&[byte]).await?;
+        if let Some(data) = iter {
+            self.dc().set_high()?;
+            for byte in data {
+                spi.write(&[byte]).await?;
+            }
         }
 
         Ok(())
