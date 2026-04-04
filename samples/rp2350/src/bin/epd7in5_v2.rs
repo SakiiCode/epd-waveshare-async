@@ -250,17 +250,17 @@ async fn main(_spawner: Spawner) {
     epd.display_framebuffer(&mut spi, &buffer).await.unwrap();
     Timer::after_secs(2).await;
 
-    /*info!("Display 4-color grayscale");
+    info!("Display 4-color grayscale");
     let mut gray_buffer = new_gray2_buffer();
     let square_size = Size::new(
-        epd7in5_v2::DISPLAY_WIDTH as u32 / 2,
-        epd7in5_v2::DISPLAY_WIDTH as u32 / 2,
+        epd7in5_v2::DISPLAY_HEIGHT as u32 / 3,
+        epd7in5_v2::DISPLAY_HEIGHT as u32 / 3,
     );
-    let square_step = Size::new(square_size.width / 2, square_size.height);
-    let mut start = Point::new(-(square_size.width as i32) / 2, 0);
+    let square_step = Size::new(square_size.width, square_size.height);
+    let mut start = Point::new(0, 0);
     for luma in 0..4 {
         gray_buffer
-            .fill_solid(&Rectangle::new(start, square_size), Gray2::new(luma))
+            .fill_solid(&Rectangle::new(start, square_size), Gray2::new(!luma))
             .unwrap();
         start += square_step;
     }
@@ -273,7 +273,7 @@ async fn main(_spawner: Spawner) {
         epd.display_framebuffer(&mut spi, &gray_buffer).await,
         "Failed to draw Gray2 buffer"
     );
-    Timer::after_secs(5).await;*/
+    Timer::after_secs(5).await;
 
     info!("Final clear");
     epd.set_refresh_mode(&mut spi, RefreshMode::FullSlow)

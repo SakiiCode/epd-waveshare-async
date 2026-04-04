@@ -499,7 +499,7 @@ where
     }
 }
 
-/*impl<HW> DisplaySimple<1, 2, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> DisplaySimple<1, 2, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -518,12 +518,15 @@ where
 
     async fn write_framebuffer(
         &mut self,
-        _spi: &mut HW::Spi,
-        _buf: &dyn BufferView<1, 2>,
+        spi: &mut HW::Spi,
+        buf: &dyn BufferView<1, 2>,
     ) -> Result<(), HW::Error> {
-        unimplemented!("2-bit grayscale for epd7in5v2");
+        let data = buf.data();
+        self.send(spi, Command::DisplayStartTrans1, data[0]).await?;
+        self.send(spi, Command::DisplayStartTrans2, data[1]).await?;
+        Ok(())
     }
-}*/
+}
 
 impl<HW> DisplayPartial<1, 1, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
 where
