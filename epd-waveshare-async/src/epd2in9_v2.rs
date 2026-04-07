@@ -13,7 +13,7 @@ use crate::{
     buffer::{
         binary_buffer_length, split_low_and_high, BinaryBuffer, BufferView, Gray2SplitBuffer,
     },
-    hw::{BusyHw, CommandDataSend as _, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
+    hw::{BusyHw, CommandDataSend, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
     log::{debug, debug_assert},
     DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake,
 };
@@ -463,12 +463,7 @@ where
         command: Command,
         data: &[u8],
     ) -> Result<(), HW::Error> {
-        let iter = if data.is_empty() {
-            None
-        } else {
-            Some(data.iter().copied())
-        };
-        self.hw.send(spi, command.register(), iter).await
+        self.hw.send(spi, command.register(), data).await
     }
 }
 
@@ -540,7 +535,7 @@ where
                 .send(
                     spi,
                     0x37,
-                    Some([0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00]),
+                    &[0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00],
                 )
                 .await?;
 

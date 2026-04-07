@@ -1,7 +1,7 @@
 use core::time::Duration;
 use embedded_graphics::{
     pixelcolor::{BinaryColor, Gray2},
-    prelude::{Dimensions, DrawTarget, GrayColor, Size},
+    prelude::{DrawTarget, GrayColor, Size},
 };
 use embedded_hal::{
     digital::{OutputPin, PinState},
@@ -252,12 +252,7 @@ where
         command: Command,
         data: &[u8],
     ) -> Result<(), HW::Error> {
-        let iter = if data.is_empty() {
-            None
-        } else {
-            Some(data.iter().copied())
-        };
-        self.hw.send(spi, command.register(), iter).await
+        self.hw.send(spi, command.register(), data).await
     }
 }
 
@@ -388,16 +383,12 @@ where
         match self.state.mode {
             RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
                 let mut buffer = new_binary_buffer();
-                buffer
-                    .fill_solid(&buffer.bounding_box(), BinaryColor::On)
-                    .unwrap();
+                buffer.clear(BinaryColor::On).unwrap();
                 self.display_framebuffer(spi, &buffer).await?;
             }
             RefreshMode::Gray2 => {
                 let mut buffer = new_gray2_buffer();
-                buffer
-                    .fill_solid(&buffer.bounding_box(), Gray2::BLACK)
-                    .unwrap();
+                buffer.clear(Gray2::BLACK).unwrap();
                 self.display_framebuffer(spi, &buffer).await?;
             }
         };
@@ -514,10 +505,10 @@ where
         let data = buf.data()[0];
         self.send(spi, Command::DisplayStartTrans1, data).await?;
         self.hw
-            .send(
+            .send_iter(
                 spi,
                 Command::DisplayStartTrans2 as u8,
-                Some(data.iter().map(|px| !*px)),
+                Some(data.iter().map(|px| !px)),
             )
             .await?;
         Ok(())

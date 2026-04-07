@@ -62,12 +62,16 @@ pub(crate) trait BusyWait: ErrorHw {
 }
 
 /// Provides the ability to send <command> then <data> style communications.
-pub(crate) trait CommandDataSend<I>: SpiHw + ErrorHw
-where
-    I: IntoIterator<Item = u8>,
-{
+pub(crate) trait CommandDataSend: SpiHw + ErrorHw {
     /// Send the following command and data to the display. Waits until the display is no longer busy before sending.
     async fn send(
+        &mut self,
+        spi: &mut Self::Spi,
+        command: u8,
+        data: &[u8],
+    ) -> Result<(), Self::Error>;
+
+    async fn send_iter<I: IntoIterator<Item = u8>>(
         &mut self,
         spi: &mut Self::Spi,
         command: u8,
@@ -101,15 +105,34 @@ where
     }
 }
 
-impl<HW, I> CommandDataSend<I> for HW
+impl<HW> CommandDataSend for HW
 where
     HW: DcHw + BusyHw + BusyWait + SpiHw + ErrorHw,
     HW::Error: From<<HW::Spi as SpiErrorType>::Error>
         + From<<HW::Dc as PinErrorType>::Error>
         + From<<HW::Busy as PinErrorType>::Error>,
-    I: IntoIterator<Item = u8>,
 {
     async fn send(
+        &mut self,
+        spi: &mut Self::Spi,
+        command: u8,
+        data: &[u8],
+    ) -> Result<(), Self::Error> {
+        trace!("Sending EPD command: 0x{:02x}", command);
+        self.wait_if_busy().await?;
+
+        self.dc().set_low()?;
+        spi.write(&[command]).await?;
+
+        if data.len() > 0 {
+            self.dc().set_high()?;
+            spi.write(data).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn send_iter<I: IntoIterator<Item = u8>>(
         &mut self,
         spi: &mut Self::Spi,
         command: u8,
