@@ -117,7 +117,7 @@ async fn main(_spawner: Spawner) {
 
     info!("Initializing EPD");
     let mut epd = expect!(
-        epd.init(&mut spi, RefreshMode::FullSlow).await,
+        epd.init(&mut spi, RefreshMode::Full).await,
         "Failed to initialize EPD"
     );
 
@@ -132,7 +132,7 @@ async fn main(_spawner: Spawner) {
     );
     Timer::after_secs(4).await;
 
-    epd.set_refresh_mode(&mut spi, RefreshMode::Full)
+    epd.set_refresh_mode(&mut spi, RefreshMode::Fast)
         .await
         .unwrap();
 
@@ -261,10 +261,10 @@ async fn main(_spawner: Spawner) {
     info!("Display 4-color grayscale");
     let mut gray_buffer = new_gray2_buffer();
     let square_size = Size::new(
-        96,
-        96,
+        gray_buffer.bounding_box().size.width/4,
+        gray_buffer.bounding_box().size.height,
     );
-    let square_step = Size::new(square_size.width / 2, square_size.height);
+    let square_step = Size::new(square_size.width, 0);
     let mut start = Point::new(0, 0);
     for luma in 0..4 {
         gray_buffer
@@ -284,7 +284,7 @@ async fn main(_spawner: Spawner) {
     Timer::after_secs(5).await;
 
     info!("Final clear");
-    epd.set_refresh_mode(&mut spi, RefreshMode::FullSlow)
+    epd.set_refresh_mode(&mut spi, RefreshMode::Full)
         .await
         .unwrap();
     buffer.clear(BinaryColor::On).unwrap();

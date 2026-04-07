@@ -1,5 +1,8 @@
 use core::time::Duration;
-use embedded_graphics::prelude::Size;
+use embedded_graphics::{
+    pixelcolor::{BinaryColor, Gray2},
+    prelude::{Dimensions, DrawTarget, GrayColor, Size},
+};
 use embedded_hal::{
     digital::{OutputPin, PinState},
     spi::{Phase, Polarity},
@@ -22,13 +25,13 @@ pub enum RefreshMode {
     ///
     /// It's recommended to avoid full refreshes less than [RECOMMENDED_MIN_FULL_REFRESH_INTERVAL] apart,
     /// but to do a full refresh at least every [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
-    Full,
+    Fast,
     /// A slower full update that gives a cleaner final image. This corresponds with the `WS_20_30`
     /// LUT in the sample code.
     ///
     /// It's recommended to avoid full refreshes less than [RECOMMENDED_MIN_FULL_REFRESH_INTERVAL] apart,
     /// but to do a full refresh at least every [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
-    FullSlow,
+    Full,
     /// Uses the partial update LUT for fast refresh. A full refresh should be done occasionally to
     /// avoid ghosting, see [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
     ///
@@ -288,7 +291,7 @@ where
         mode: RefreshMode,
     ) -> Result<(), HW::Error> {
         match mode {
-            RefreshMode::Full => {
+            RefreshMode::Fast => {
                 // PANEL SETTING
                 self.send(spi, Command::PanelSet, &[0x1F]).await?;
 
@@ -309,7 +312,7 @@ where
                 self.send(spi, Command::CascadeSet, &[0x02]).await?;
                 self.send(spi, Command::ForceTemperature, &[0x5A]).await?;
             }
-            RefreshMode::FullSlow => {
+            RefreshMode::Full => {
                 // POWER SETTING
                 self.send(spi, Command::PowerSet, &[0x07, 0x07, 0x3F, 0x3F])
                     .await?;
@@ -376,6 +379,28 @@ where
             }
         }
 
+        self.state.mode = mode;
+
+        Ok(())
+    }
+
+    pub async fn clear(&mut self, spi: &mut HW::Spi) -> Result<(), HW::Error> {
+        match self.state.mode {
+            RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
+                let mut buffer = new_binary_buffer();
+                buffer
+                    .fill_solid(&buffer.bounding_box(), BinaryColor::On)
+                    .unwrap();
+                self.display_framebuffer(spi, &buffer).await?;
+            }
+            RefreshMode::Gray2 => {
+                let mut buffer = new_gray2_buffer();
+                buffer
+                    .fill_solid(&buffer.bounding_box(), Gray2::BLACK)
+                    .unwrap();
+                self.display_framebuffer(spi, &buffer).await?;
+            }
+        };
         Ok(())
     }
 }
