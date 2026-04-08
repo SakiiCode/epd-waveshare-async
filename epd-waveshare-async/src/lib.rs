@@ -183,6 +183,12 @@ pub trait Wake<SPI: SpiDevice, ERROR> {
     async fn wake(self, spi: &mut SPI) -> Result<Self::DisplayOut, ERROR>;
 }
 
+/// Displays that can be cleared with their base color.
+pub trait Clear<SPI: SpiDevice, ERROR> {
+    /// Fills the display with a specific color.
+    async fn clear(&mut self, spi: &mut SPI) -> Result<(), ERROR>;
+}
+
 /// Base trait for any display where the display can be updated separate from its framebuffer data.
 pub trait Displayable<SPI: SpiDevice, ERROR> {
     /// Updates (refreshes) the display based on what has been written to the framebuffer.

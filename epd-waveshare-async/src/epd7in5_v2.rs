@@ -13,7 +13,7 @@ use crate::{
     buffer::{binary_buffer_length, BinaryBuffer, BufferView, Gray2SplitBuffer},
     hw::{BusyHw, BusyWait, CommandDataSend as _, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
     log::debug,
-    DisplayPartial, DisplaySimple, Displayable, Reset, Sleep,
+    Clear, DisplayPartial, DisplaySimple, Displayable, Reset, Sleep,
 };
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -378,22 +378,6 @@ where
 
         Ok(())
     }
-
-    pub async fn clear(&mut self, spi: &mut HW::Spi) -> Result<(), HW::Error> {
-        match self.state.mode {
-            RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
-                let mut buffer = new_binary_buffer();
-                buffer.clear(BinaryColor::On).unwrap();
-                self.display_framebuffer(spi, &buffer).await?;
-            }
-            RefreshMode::Gray2 => {
-                let mut buffer = new_gray2_buffer();
-                buffer.clear(Gray2::BLACK).unwrap();
-                self.display_framebuffer(spi, &buffer).await?;
-            }
-        };
-        Ok(())
-    }
 }
 
 async fn reset_impl<HW>(hw: &mut HW) -> Result<(), HW::Error>
@@ -476,6 +460,30 @@ where
         self.send(spi, Command::DisplayRefresh, &[]).await?;
         self.hw.delay().delay_ms(100).await;
         self.hw.wait_if_busy().await?;
+        Ok(())
+    }
+}
+
+impl<HW> Clear<HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+where
+    HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
+    HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
+        + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
+        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
+{
+    async fn clear(&mut self, spi: &mut HW::Spi) -> Result<(), HW::Error> {
+        match self.state.mode {
+            RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
+                let mut buffer = new_binary_buffer();
+                buffer.clear(BinaryColor::On).unwrap();
+                self.display_framebuffer(spi, &buffer).await?;
+            }
+            RefreshMode::Gray2 => {
+                let mut buffer = new_gray2_buffer();
+                buffer.clear(Gray2::BLACK).unwrap();
+                self.display_framebuffer(spi, &buffer).await?;
+            }
+        };
         Ok(())
     }
 }
