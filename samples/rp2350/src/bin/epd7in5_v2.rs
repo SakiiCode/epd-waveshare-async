@@ -27,7 +27,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyle};
 use epd_waveshare_async::epd7in5_v2::{self, new_gray2_buffer, Epd7in5, RefreshMode};
-use epd_waveshare_async::{DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake};
+use epd_waveshare_async::{Clear, DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake};
 use rp2350_samples::*;
 use static_cell::StaticCell;
 
@@ -226,7 +226,14 @@ async fn main(_spawner: Spawner) {
     Timer::after_secs(2).await;
 
     info!("Waking EPD");
-    let mut epd = expect!(epd.reset().await.unwrap().init(&mut spi, RefreshMode::Partial).await, "Failed to wake EPD");
+    let mut epd = expect!(
+        epd.reset()
+            .await
+            .unwrap()
+            .init(&mut spi, RefreshMode::Partial)
+            .await,
+        "Failed to wake EPD"
+    );
     Timer::after_secs(1).await;
 
     info!("Displaying text");
@@ -261,7 +268,7 @@ async fn main(_spawner: Spawner) {
     info!("Display 4-color grayscale");
     let mut gray_buffer = new_gray2_buffer();
     let square_size = Size::new(
-        gray_buffer.bounding_box().size.width/4,
+        gray_buffer.bounding_box().size.width / 4,
         gray_buffer.bounding_box().size.height,
     );
     let square_step = Size::new(square_size.width, 0);
@@ -288,10 +295,7 @@ async fn main(_spawner: Spawner) {
         .await
         .unwrap();
     buffer.clear(BinaryColor::On).unwrap();
-    expect!(
-        epd.display_framebuffer(&mut spi, &buffer).await,
-        "Failed to clear display"
-    );
+    expect!(epd.clear(&mut spi).await, "Failed to clear display");
     Timer::after_secs(4).await;
 
     let _epd = expect!(epd.sleep(&mut spi).await, "Failed to put EPD to sleep");

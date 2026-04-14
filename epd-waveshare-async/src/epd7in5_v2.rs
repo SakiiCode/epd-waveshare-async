@@ -1,8 +1,5 @@
 use core::time::Duration;
-use embedded_graphics::{
-    pixelcolor::{BinaryColor, Gray2},
-    prelude::{DrawTarget, GrayColor, Size},
-};
+use embedded_graphics::{pixelcolor::BinaryColor, prelude::Size};
 use embedded_hal::{
     digital::{OutputPin, PinState},
     spi::{Phase, Polarity},
@@ -11,7 +8,7 @@ use embedded_hal_async::delay::DelayNs;
 
 use crate::{
     buffer::{binary_buffer_length, BinaryBuffer, BufferView, Gray2SplitBuffer},
-    hw::{BusyHw, BusyWait, CommandDataSend as _, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
+    hw::{BusyHw, BusyWait, CommandDataSend, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw},
     log::debug,
     Clear, DisplayPartial, DisplaySimple, Displayable, Reset, Sleep,
 };
@@ -472,18 +469,35 @@ where
         + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
 {
     async fn clear(&mut self, spi: &mut HW::Spi) -> Result<(), HW::Error> {
+        let buf1_value;
+        let buf2_value;
         match self.state.mode {
             RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
-                let mut buffer = new_binary_buffer();
-                buffer.clear(BinaryColor::On).unwrap();
-                self.display_framebuffer(spi, &buffer).await?;
+                buf1_value = BinaryColor::On as u8;
+                buf2_value = BinaryColor::Off as u8;
             }
             RefreshMode::Gray2 => {
-                let mut buffer = new_gray2_buffer();
-                buffer.clear(Gray2::BLACK).unwrap();
-                self.display_framebuffer(spi, &buffer).await?;
+                buf1_value = BinaryColor::Off as u8;
+                buf2_value = BinaryColor::Off as u8;
             }
         };
+
+        self.hw
+            .send_iter(
+                spi,
+                Command::DisplayStartTrans1 as u8,
+                Some(core::iter::repeat_n(buf1_value, BINARY_BUFFER_LENGTH)),
+            )
+            .await?;
+        self.hw
+            .send_iter(
+                spi,
+                Command::DisplayStartTrans2 as u8,
+                Some(core::iter::repeat_n(buf2_value, BINARY_BUFFER_LENGTH)),
+            )
+            .await?;
+
+        self.update_display(spi).await?;
         Ok(())
     }
 }
