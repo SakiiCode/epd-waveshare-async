@@ -327,11 +327,11 @@ pub const BINARY_BUFFER_LENGTH: usize =
 /// The buffer type used by [Epd2In9V2].
 pub type Epd2In9BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
 /// Constructs a new binary buffer for use with the [Epd2In9V2] display.
-pub fn new_binary_buffer() -> Epd2In9BinaryBuffer {
+pub const fn new_binary_buffer() -> Epd2In9BinaryBuffer {
     Epd2In9BinaryBuffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 pub type Epd2In9Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
-pub fn new_gray2_buffer() -> Epd2In9Gray2Buffer {
+pub const fn new_gray2_buffer() -> Epd2In9Gray2Buffer {
     Epd2In9Gray2Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 

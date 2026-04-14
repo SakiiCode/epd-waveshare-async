@@ -172,7 +172,7 @@ pub const BINARY_BUFFER_LENGTH: usize =
 pub type Epd2In9Buffer =
     BinaryBuffer<{ binary_buffer_length(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32)) }>;
 /// Constructs a new buffer for use with the [Epd2In9] display.
-pub fn new_buffer() -> Epd2In9Buffer {
+pub const fn new_buffer() -> Epd2In9Buffer {
     Epd2In9Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 

@@ -134,11 +134,11 @@ pub const BINARY_BUFFER_LENGTH: usize =
 /// The buffer type used by [Epd7in5].
 pub type Epd7in5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
 /// Constructs a new binary buffer for use with the [Epd7in5] display.
-pub fn new_binary_buffer() -> Epd7in5BinaryBuffer {
+pub const fn new_binary_buffer() -> Epd7in5BinaryBuffer {
     Epd7in5BinaryBuffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 pub type Epd7in5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
-pub fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
+pub const fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
     Epd7in5Gray2Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
 }
 
