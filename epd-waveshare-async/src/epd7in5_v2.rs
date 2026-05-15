@@ -17,22 +17,22 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// The refresh mode for the display.
 pub enum RefreshMode {
-    /// Use the full update LUT. This is slower than [RefreshMode::Partial], but should be done
-    /// occasionally to avoid ghosting. If ghosting persists, try [RefreshMode::FullSlow].
+    /// Refreshes the entire display. This is slower than [RefreshMode::Partial], but should be done
+    /// occasionally to avoid ghosting. If ghosting persists, try [RefreshMode::Full].
     ///
     /// It's recommended to avoid full refreshes less than [RECOMMENDED_MIN_FULL_REFRESH_INTERVAL] apart,
     /// but to do a full refresh at least every [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
     Fast,
-    /// A slower full update that gives a cleaner final image. This corresponds with the `WS_20_30`
-    /// LUT in the sample code.
+    /// A slower full update that gives a cleaner final image.
     ///
     /// It's recommended to avoid full refreshes less than [RECOMMENDED_MIN_FULL_REFRESH_INTERVAL] apart,
     /// but to do a full refresh at least every [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
     Full,
-    /// Uses the partial update LUT for fast refresh. A full refresh should be done occasionally to
-    /// avoid ghosting, see [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
+    /// Changes only specific areas of the screen with no flickering.
+    /// A fast/full refresh should be done occasionally to avoid ghosting,
+    /// see [RECOMMENDED_MAX_FULL_REFRESH_INTERVAL].
     ///
-    /// This is the standard "fast" update. It diffs the current framebuffer against the
+    /// It diffs the current framebuffer against the
     /// previous framebuffer, and just updates the pixels that differ.
     Partial,
     /// A refresh mode that supports 2-bit grayscale. Note that Waveshare calls this "Gray4", but
@@ -145,7 +145,7 @@ pub const fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
 /// * [sample code](https://github.com/waveshareteam/e-Paper/blob/master/Arduino_R4/src/e-Paper/EPD_7in5_V2.cpp)
 ///
 /// The display has a landscape orientation. This display supports either
-/// [embedded_graphics::pixelcolor::BinaryColor] or [embedded_graphics::pixelcolor::Gray2] (TODO),
+/// [embedded_graphics::pixelcolor::BinaryColor] or [embedded_graphics::pixelcolor::Gray2],
 /// depending on the display mode.
 ///
 /// When using `BinaryColor`, `Off` is black and `On` is white.

@@ -1,4 +1,4 @@
-//! This example tests the EPD Waveshare 7.5" v2 display driver using an RP2350-ETH board.
+//! This example tests the EPD Waveshare 7.5" v2 display driver using a Waveshare RP2350-ETH board.
 
 #![no_std]
 #![no_main]
