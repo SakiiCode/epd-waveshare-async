@@ -160,12 +160,13 @@ async fn main(_spawner: Spawner) {
     buffer
         .fill_solid(&buffer.bounding_box(), BinaryColor::On)
         .unwrap();
+    let max_width = buffer.bounding_box().size.width;
+    let max_height = buffer.bounding_box().size.height;
     let mut top_left = Point::new(0, 0);
-    let buffer_width = buffer.bounding_box().size.width;
-    let mut box_size = 192;
+    let mut box_size = 224;
     let mut color = BinaryColor::Off;
     while box_size > 0 {
-        for _ in 0..(buffer_width / box_size) {
+        while (top_left.x as u32) + box_size < max_width {
             buffer
                 .fill_solid(
                     &Rectangle::new(top_left, Size::new(box_size, box_size)),
@@ -177,7 +178,7 @@ async fn main(_spawner: Spawner) {
         }
         top_left.x = 0;
         top_left.y += box_size as i32;
-        color = color.invert();
+        color = BinaryColor::Off;
         box_size /= 2;
     }
     let after_buffer_draw = Instant::now();
