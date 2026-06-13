@@ -26,7 +26,7 @@ use embedded_graphics::pixelcolor::{BinaryColor, Gray2};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyle};
-use epd_waveshare_async::epd7in5_v2::{self, new_gray2_buffer, Epd7in5, RefreshMode};
+use epd_waveshare_async::epd7in5_v2::{self, new_gray2_buffer, Epd7In5V2, RefreshMode};
 use epd_waveshare_async::{Clear, DisplayPartial, DisplaySimple, Displayable, Reset, Sleep, Wake};
 use rp2350_samples::*;
 use static_cell::StaticCell;
@@ -108,7 +108,7 @@ async fn main(_spawner: Spawner) {
     let _pwr = Output::new(resources.epd_hw.pwr, Level::High);
 
     let mut spi = SpiDevice::new(&raw_spi, cs_pin);
-    let epd = Epd7in5::new(DisplayHw::new(
+    let epd = Epd7In5V2::new(DisplayHw::new(
         resources.epd_hw.dc,
         resources.epd_hw.reset,
         resources.epd_hw.busy,

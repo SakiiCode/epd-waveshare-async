@@ -151,7 +151,7 @@ pub const fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
 /// When using `BinaryColor`, `Off` is black and `On` is white.
 ///
 /// HW should implement [ResetHw], [BusyHw], [DcHw], [SpiHw], [DelayHw], and [ErrorHw].
-pub struct Epd7in5<HW, STATE> {
+pub struct Epd7In5V2<HW, STATE> {
     hw: HW,
     state: STATE,
 }
@@ -190,7 +190,7 @@ pub struct StateAsleep<W: StateAwake> {
 impl<W: StateAwake> StateInternal for StateAsleep<W> {}
 impl<W: StateAwake> State for StateAsleep<W> {}
 
-impl<HW> Epd7in5<HW, StateUninitialized>
+impl<HW> Epd7In5V2<HW, StateUninitialized>
 where
     HW: BusyHw + DcHw + ResetHw + DelayHw + SpiHw + ErrorHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -199,14 +199,14 @@ where
         + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
 {
     pub fn new(hw: HW) -> Self {
-        Epd7in5 {
+        Epd7In5V2 {
             hw,
             state: StateUninitialized(),
         }
     }
 }
 
-impl<HW, STATE> Epd7in5<HW, STATE>
+impl<HW, STATE> Epd7In5V2<HW, STATE>
 where
     HW: BusyHw + DcHw + ResetHw + DelayHw + SpiHw + ErrorHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -220,11 +220,11 @@ where
         mut self,
         spi: &mut HW::Spi,
         mode: RefreshMode,
-    ) -> Result<Epd7in5<HW, StateReady>, HW::Error> {
+    ) -> Result<Epd7In5V2<HW, StateReady>, HW::Error> {
         debug!("Initializing display to {}", mode);
         self = self.reset().await?;
 
-        let mut epd = Epd7in5 {
+        let mut epd = Epd7In5V2 {
             hw: self.hw,
             state: StateReady { mode },
         };
@@ -234,7 +234,7 @@ where
     }
 }
 
-impl<HW, STATE> Epd7in5<HW, STATE>
+impl<HW, STATE> Epd7In5V2<HW, STATE>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -253,7 +253,7 @@ where
     }
 }
 
-impl<HW> Epd7in5<HW, StateReady>
+impl<HW> Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw + ResetHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -392,12 +392,12 @@ where
     Ok(())
 }
 
-impl<HW, STATE: StateAwake> Reset<HW::Error> for Epd7in5<HW, STATE>
+impl<HW, STATE: StateAwake> Reset<HW::Error> for Epd7In5V2<HW, STATE>
 where
     HW: ResetHw + DelayHw + ErrorHw,
     HW::Error: From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, STATE>;
+    type DisplayOut = Epd7In5V2<HW, STATE>;
 
     async fn reset(mut self) -> Result<Self::DisplayOut, HW::Error> {
         reset_impl(&mut self.hw).await?;
@@ -405,37 +405,37 @@ where
     }
 }
 
-impl<HW, W: StateAwake> Reset<HW::Error> for Epd7in5<HW, StateAsleep<W>>
+impl<HW, W: StateAwake> Reset<HW::Error> for Epd7In5V2<HW, StateAsleep<W>>
 where
     HW: ResetHw + DelayHw + ErrorHw,
     HW::Error: From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, W>;
+    type DisplayOut = Epd7In5V2<HW, W>;
 
     async fn reset(self) -> Result<Self::DisplayOut, HW::Error> {
         // will do reset inside init()
-        Ok(Epd7in5 {
+        Ok(Epd7In5V2 {
             hw: self.hw,
             state: self.state.wake_state,
         })
     }
 }
 
-impl<HW, STATE: StateAwake> Sleep<HW::Spi, HW::Error> for Epd7in5<HW, STATE>
+impl<HW, STATE: StateAwake> Sleep<HW::Spi, HW::Error> for Epd7In5V2<HW, STATE>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
 {
-    type DisplayOut = Epd7in5<HW, StateAsleep<StateUninitialized>>;
+    type DisplayOut = Epd7In5V2<HW, StateAsleep<StateUninitialized>>;
 
     async fn sleep(mut self, spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
         debug!("Sleeping EPD");
         self.send(spi, Command::VCOMDataInterval, &[0xF7]).await?;
         self.send(spi, Command::PowerOff, &[]).await?;
         self.send(spi, Command::DeepSleep, &[0xA5]).await?;
-        Ok(Epd7in5 {
+        Ok(Epd7In5V2 {
             hw: self.hw,
             state: StateAsleep {
                 wake_state: StateUninitialized(),
@@ -444,7 +444,7 @@ where
     }
 }
 
-impl<HW> Displayable<HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> Displayable<HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -461,7 +461,7 @@ where
     }
 }
 
-impl<HW> Clear<HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> Clear<HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -502,7 +502,7 @@ where
     }
 }
 
-impl<HW> DisplaySimple<1, 1, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> DisplaySimple<1, 1, HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -537,7 +537,7 @@ where
     }
 }
 
-impl<HW> DisplaySimple<1, 2, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> DisplaySimple<1, 2, HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
@@ -566,7 +566,7 @@ where
     }
 }
 
-impl<HW> DisplayPartial<1, 1, HW::Spi, HW::Error> for Epd7in5<HW, StateReady>
+impl<HW> DisplayPartial<1, 1, HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
     HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
