@@ -129,14 +129,14 @@ impl Command {
 pub const BINARY_BUFFER_LENGTH: usize =
     binary_buffer_length(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 /// The buffer type used by [Epd7in5].
-pub type Epd7in5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
+pub type Epd7In5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
 /// Constructs a new binary buffer for use with the [Epd7in5] display.
-pub const fn new_binary_buffer() -> Epd7in5BinaryBuffer {
-    Epd7in5BinaryBuffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
+pub const fn new_binary_buffer() -> Epd7In5BinaryBuffer {
+    Epd7In5BinaryBuffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
 }
-pub type Epd7in5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
-pub const fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
-    Epd7in5Gray2Buffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
+pub type Epd7In5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
+pub const fn new_gray2_buffer() -> Epd7In5Gray2Buffer {
+    Epd7In5Gray2Buffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
 }
 
 /// Controls v2 of the 7.5" Waveshare e-paper display.
