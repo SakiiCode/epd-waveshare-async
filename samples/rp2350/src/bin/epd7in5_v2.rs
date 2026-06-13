@@ -163,7 +163,7 @@ async fn main(_spawner: Spawner) {
     let max_width = buffer.bounding_box().size.width;
     let max_height = buffer.bounding_box().size.height;
     let mut top_left = Point::new(0, 0);
-    let mut box_size = 224;
+    let mut box_size = 192;
     let mut color = BinaryColor::Off;
     while box_size > 0 {
         while (top_left.x as u32) + box_size < max_width {
