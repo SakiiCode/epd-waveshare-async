@@ -50,9 +50,9 @@ impl RefreshMode {
 }
 
 /// The width of the display (landscape orientation).
-pub const DISPLAY_WIDTH: u16 = 800;
+pub const DISPLAY_WIDTH: u32 = 800;
 /// The height of the display (landscape orientation).
-pub const DISPLAY_HEIGHT: u16 = 480;
+pub const DISPLAY_HEIGHT: u32 = 480;
 /// It's recommended to avoid doing a full refresh more often than this (at least on a regular basis).
 pub const RECOMMENDED_MIN_FULL_REFRESH_INTERVAL: Duration = Duration::from_secs(180);
 /// It's recommended to do a full refresh at least this often.
@@ -127,16 +127,16 @@ impl Command {
 
 /// The length of the underlying buffer used by [Epd7in5].
 pub const BINARY_BUFFER_LENGTH: usize =
-    binary_buffer_length(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32));
+    binary_buffer_length(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 /// The buffer type used by [Epd7in5].
 pub type Epd7in5BinaryBuffer = BinaryBuffer<BINARY_BUFFER_LENGTH>;
 /// Constructs a new binary buffer for use with the [Epd7in5] display.
 pub const fn new_binary_buffer() -> Epd7in5BinaryBuffer {
-    Epd7in5BinaryBuffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
+    Epd7in5BinaryBuffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
 }
 pub type Epd7in5Gray2Buffer = Gray2SplitBuffer<BINARY_BUFFER_LENGTH>;
 pub const fn new_gray2_buffer() -> Epd7in5Gray2Buffer {
-    Epd7in5Gray2Buffer::new(Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32))
+    Epd7in5Gray2Buffer::new(Size::new(DISPLAY_WIDTH, DISPLAY_HEIGHT))
 }
 
 /// Controls v2 of the 7.5" Waveshare e-paper display.
