@@ -14,6 +14,7 @@ use embassy_time::Delay;
 use embedded_hal::digital::PinState;
 use epd_waveshare_async::hw::{BusyHw, DcHw, DelayHw, ErrorHw, ResetHw, SpiHw};
 use thiserror::Error as ThisError;
+use {defmt_rtt as _, panic_probe as _};
 
 /// Defines the hardware to use for connecting to the display.
 pub struct DisplayHw<'a, SPI> {
