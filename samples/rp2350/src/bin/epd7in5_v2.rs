@@ -193,14 +193,7 @@ async fn main(_spawner: Spawner) {
     Timer::after_secs(4).await;
 
     info!("Clearing screen");
-    buffer
-        .fill_solid(&buffer.bounding_box(), BinaryColor::On)
-        .unwrap();
-    info!("Displaying white buffer");
-    expect!(
-        epd.display_framebuffer(&mut spi, &buffer).await,
-        "Failed to display buffer"
-    );
+    epd.clear(&mut spi).await.unwrap();
     Timer::after_secs(5).await;
 
     info!("Changing to partial refresh mode");
@@ -292,10 +285,6 @@ async fn main(_spawner: Spawner) {
     Timer::after_secs(5).await;
 
     info!("Final clear");
-    epd.set_refresh_mode(&mut spi, RefreshMode::Full)
-        .await
-        .unwrap();
-    buffer.clear(BinaryColor::On).unwrap();
     expect!(epd.clear(&mut spi).await, "Failed to clear display");
     Timer::after_secs(4).await;
 

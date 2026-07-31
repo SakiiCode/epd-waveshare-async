@@ -81,10 +81,10 @@ pub enum Command {
     PowerOnMeasure = 0x05,
     BoosterSoftStart = 0x06,
     DeepSleep = 0x07,
-    DisplayStartTrans1 = 0x10, // White/Black Data
+    DisplayStartTrans1 = 0x10, // Front buffer
     DataStop = 0x11,
     DisplayRefresh = 0x12,
-    DisplayStartTrans2 = 0x13, // Red Data
+    DisplayStartTrans2 = 0x13, // Back buffer
     DualSPI = 0x15,
     AutoSequence = 0x17,
     KWLUTOption = 0x2B,
@@ -473,12 +473,12 @@ where
         let buf2_value;
         match self.state.mode {
             RefreshMode::Fast | RefreshMode::Full | RefreshMode::Partial => {
-                buf1_value = BinaryColor::On as u8;
-                buf2_value = BinaryColor::Off as u8;
+                buf1_value = 0xFF;
+                buf2_value = 0x00;
             }
             RefreshMode::Gray2 => {
-                buf1_value = BinaryColor::Off as u8;
-                buf2_value = BinaryColor::Off as u8;
+                buf1_value = 0x00;
+                buf2_value = 0x00;
             }
         };
 
