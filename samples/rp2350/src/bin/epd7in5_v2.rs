@@ -203,8 +203,10 @@ async fn main(_spawner: Spawner) {
     );
 
     info!("Displaying black text on white");
-    buffer.clear(BinaryColor::On).unwrap();
-    let character_style = MonoTextStyle::new(&FONT_6X10, BinaryColor::Off);
+    // The first partial refresh uses inverted colors for some reason
+    buffer.clear(BinaryColor::Off).unwrap();
+    epd.write_base_framebuffer(&mut spi, &buffer).await.unwrap();
+    let character_style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     let text = Text::with_text_style(
         "Black text",
         Point::new(10, 30),
@@ -212,7 +214,8 @@ async fn main(_spawner: Spawner) {
         text_style,
     );
     text.draw(&mut buffer).unwrap();
-    epd.display_framebuffer(&mut spi, &buffer).await.unwrap();
+    epd.write_framebuffer(&mut spi, &buffer).await.unwrap();
+    epd.update_display(&mut spi).await.unwrap();
     Timer::after_secs(2).await;
 
     info!("Sleeping EPD");
@@ -240,10 +243,8 @@ async fn main(_spawner: Spawner) {
         text_style,
     );
     text.draw(&mut buffer).unwrap();
-    expect!(
-        epd.display_framebuffer(&mut spi, &buffer).await,
-        "Failed to display text buffer"
-    );
+    epd.write_framebuffer(&mut spi, &buffer).await.unwrap();
+    epd.update_display(&mut spi).await.unwrap();
     Timer::after_secs(3).await;
 
     info!("Displaying white text on black");
@@ -256,7 +257,8 @@ async fn main(_spawner: Spawner) {
         text_style,
     );
     text.draw(&mut buffer).unwrap();
-    epd.display_framebuffer(&mut spi, &buffer).await.unwrap();
+    epd.write_framebuffer(&mut spi, &buffer).await.unwrap();
+    epd.update_display(&mut spi).await.unwrap();
     Timer::after_secs(2).await;
 
     info!("Display 4-color grayscale");

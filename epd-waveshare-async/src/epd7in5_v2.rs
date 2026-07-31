@@ -1,5 +1,5 @@
 use core::time::Duration;
-use embedded_graphics::{pixelcolor::BinaryColor, prelude::Size};
+use embedded_graphics::{geometry::Point, prelude::Size, primitives::Rectangle};
 use embedded_hal::{
     digital::{OutputPin, PinState},
     spi::{Phase, Polarity},
@@ -375,6 +375,38 @@ where
 
         Ok(())
     }
+
+    /// Sets the window to which the next image data will be written.
+    pub async fn set_window(
+        &mut self,
+        spi: &mut HW::Spi,
+        shape: Rectangle,
+    ) -> Result<(), HW::Error> {
+        let Point {
+            x: x_start,
+            y: y_start,
+        } = shape.top_left;
+        let Point { x: x_end, y: y_end } = shape.bottom_right().unwrap();
+
+        self.send(spi, Command::PartialIn, &[]).await?;
+
+        let window: [u8; _] = [
+            x_start / 256,
+            x_start % 256,
+            x_end / 256,
+            x_end % 256 - 1,
+            y_start / 256,
+            y_start % 256,
+            y_end / 256,
+            y_end % 256 - 1,
+            0x01,
+        ]
+        .map(|p| p as u8);
+
+        self.send(spi, Command::PartialWindow, &window).await?;
+
+        Ok(())
+    }
 }
 
 async fn reset_impl<HW>(hw: &mut HW) -> Result<(), HW::Error>
@@ -568,10 +600,11 @@ where
 
 impl<HW> DisplayPartial<1, 1, HW::Spi, HW::Error> for Epd7In5V2<HW, StateReady>
 where
-    HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw,
+    HW: BusyHw + DcHw + SpiHw + ErrorHw + DelayHw + ResetHw,
     HW::Error: From<<HW::Busy as embedded_hal::digital::ErrorType>::Error>
         + From<<HW::Dc as embedded_hal::digital::ErrorType>::Error>
-        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>,
+        + From<<HW::Spi as embedded_hal_async::spi::ErrorType>::Error>
+        + From<<HW::Reset as embedded_hal::digital::ErrorType>::Error>,
 {
     async fn write_base_framebuffer(
         &mut self,
@@ -579,32 +612,13 @@ where
         buf: &dyn BufferView<1, 1>,
     ) -> Result<(), HW::Error> {
         let buffer_bounds = buf.window();
-        let x_start = buffer_bounds.top_left.x;
-        let y_start = buffer_bounds.top_left.y;
-        let x_end = buffer_bounds.bottom_right().unwrap().x;
-        let y_end = buffer_bounds.bottom_right().unwrap().y;
 
         let data = buf.data()[0];
 
         self.send(spi, Command::VCOMDataInterval, &[0xA9, 0x07])
             .await?;
 
-        self.send(spi, Command::PartialIn, &[]).await?;
-
-        let window: [u8; _] = [
-            x_start / 256,
-            x_start % 256,
-            x_end / 256,
-            x_end % 256 - 1,
-            y_start / 256,
-            y_start % 256,
-            y_end / 256,
-            y_end % 256 - 1,
-            0x01,
-        ]
-        .map(|p| p as u8);
-
-        self.send(spi, Command::PartialWindow, &window).await?;
+        self.set_window(spi, buffer_bounds).await?;
 
         self.send(spi, Command::DisplayStartTrans2, data).await?;
 
