@@ -391,17 +391,16 @@ where
         self.send(spi, Command::PartialIn, &[]).await?;
 
         let window: [u8; _] = [
-            x_start / 256,
-            x_start % 256,
-            x_end / 256,
-            x_end % 256 - 1,
-            y_start / 256,
-            y_start % 256,
-            y_end / 256,
-            y_end % 256 - 1,
+            (x_start / 256) as u8,
+            (x_start % 256) as u8,
+            (x_end / 256) as u8,
+            (x_end % 256) as u8 - 1,
+            (y_start / 256) as u8,
+            (y_start % 256) as u8,
+            (y_end / 256) as u8,
+            (y_end % 256) as u8 - 1,
             0x01,
-        ]
-        .map(|p| p as u8);
+        ];
 
         self.send(spi, Command::PartialWindow, &window).await?;
 
