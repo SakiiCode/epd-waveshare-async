@@ -2,7 +2,7 @@
 runner = "espflash flash --monitor --chip esp32s3 --log-format defmt"
 
 [env]
-DEFMT_LOG = "info"
+DEFMT_LOG = "trace"
 
 [build]
 rustflags = [

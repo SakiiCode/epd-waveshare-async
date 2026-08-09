@@ -853,6 +853,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-hal-bus"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "513e0b3a8fb7d3013a8ae17a834283f170deaf7d0eeab0a7c1a36ad4dd356d22"
+dependencies = [
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+]
+
+[[package]]
 name = "embedded-hal-nb"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1130,7 +1141,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "551f90766e1527edaa0c91e8d559e9e2a60397b545e93357ac61fb31845e5712"
 dependencies = [
  "cfg-if",
- "defmt 1.1.1",
  "document-features",
  "embassy-executor 0.10.0",
  "embassy-sync 0.8.0",
@@ -1264,12 +1274,18 @@ dependencies = [
  "critical-section",
  "defmt 1.1.1",
  "embassy-executor 0.10.0",
+ "embassy-sync 0.7.2",
  "embassy-time",
+ "embedded-graphics",
+ "embedded-hal 1.0.0",
+ "embedded-hal-bus",
+ "epd-waveshare-async",
  "esp-bootloader-esp-idf",
  "esp-hal",
  "esp-println",
  "esp-rtos",
  "static_cell",
+ "thiserror",
 ]
 
 [[package]]

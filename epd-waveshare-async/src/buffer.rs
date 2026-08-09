@@ -329,6 +329,13 @@ impl From<Rgb888> for HexColor {
     }
 }
 
+impl From<HexColor> for Rgb888 {
+    fn from(value: HexColor) -> Self {
+        let rgb = value.rgb();
+        Rgb888::new(rgb.0, rgb.1, rgb.2)
+    }
+}
+
 /// A compact buffer for storing 6-coloured display data.
 ///
 /// This buffer packs the data such that each byte represents 2 pixels.
