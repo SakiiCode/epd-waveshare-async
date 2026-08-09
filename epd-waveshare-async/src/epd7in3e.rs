@@ -186,7 +186,6 @@ where
         };
 
         epd.set_refresh_mode_impl(spi, mode).await?;
-        epd.send(spi, Command::PowerOn, &[]).await?;
         Ok(epd)
     }
 }
@@ -328,9 +327,6 @@ where
 
     async fn sleep(mut self, spi: &mut HW::Spi) -> Result<Self::DisplayOut, HW::Error> {
         debug!("Sleeping EPD");
-        // Is PowerOff needed?
-        // self.send(spi, Command::PowerOff, &[]).await?;
-        // self.hw.wait_if_busy().await?;
         self.send(spi, Command::DeepSleep, &[0xA5]).await?;
         Ok(Epd7In3E {
             hw: self.hw,
@@ -350,8 +346,13 @@ where
 {
     async fn update_display(&mut self, spi: &mut HW::Spi) -> Result<(), HW::Error> {
         debug!("Updating display");
+        self.send(spi, Command::PowerOn, &[]).await?;
+        self.hw.wait_if_busy().await?;
 
         self.send(spi, Command::DisplayRefresh, &[0x00]).await?;
+        self.hw.wait_if_busy().await?;
+
+        self.send(spi, Command::PowerOff, &[0x00]).await?;
         self.hw.wait_if_busy().await?;
         Ok(())
     }
