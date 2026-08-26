@@ -1,7 +1,7 @@
 use core::{
     cmp::{max, min},
     convert::Infallible,
-    mem::MaybeUninit,
+    ptr::NonNull,
 };
 
 use embedded_graphics::{
@@ -63,6 +63,26 @@ impl<const L: usize> BinaryBuffer<L> {
             bytes_per_row: dimensions.width as usize / 8,
             size: dimensions,
             data: [0; L],
+        }
+    }
+
+    /// In-place initializes the fields of a BinaryBuffer object that has been allocated but not initialized.
+    pub fn init(mut uninit: NonNull<Self>, dimensions: Size) {
+        assert!(
+            dimensions.width % 8 == 0,
+            "Width must be a multiple of 8 for binary packing."
+        );
+        assert!(
+            binary_buffer_length(dimensions) == L,
+            "Size must match given dimensions"
+        );
+
+        unsafe {
+            let uninit = uninit.as_mut();
+
+            uninit.bytes_per_row = dimensions.width as usize / 8;
+            uninit.size = dimensions;
+            uninit.data.fill(0);
         }
     }
 
@@ -381,7 +401,8 @@ impl<const L: usize> HexBuffer<L> {
         }
     }
 
-    pub fn init(dest: &mut MaybeUninit<Self>, dimensions: Size) {
+    /// In-place initializes the fields of a HexBuffer object that has been allocated but not initialized.
+    pub fn init(mut uninit: NonNull<Self>, dimensions: Size) {
         assert!(
             dimensions.width % 2 == 0,
             "Width must be a multiple of 2 for binary packing."
@@ -392,10 +413,11 @@ impl<const L: usize> HexBuffer<L> {
         );
 
         unsafe {
-            let buf = dest.assume_init_mut();
-            buf.bytes_per_row = dimensions.width as usize / 2;
-            buf.size = dimensions;
-            buf.data.fill(0);
+            let uninit = uninit.as_mut();
+
+            uninit.bytes_per_row = dimensions.width as usize / 2;
+            uninit.size = dimensions;
+            uninit.data.fill(0);
         }
     }
 
@@ -482,6 +504,25 @@ impl<const L: usize> Gray2SplitBuffer<L> {
         Self {
             low: BinaryBuffer::new(dimensions),
             high: BinaryBuffer::new(dimensions),
+        }
+    }
+
+    /// In-place initializes the fields of a Gray2SplitBuffer object that has been allocated but not initialized.
+    pub fn init(mut uninit: NonNull<Self>, dimensions: Size) {
+        assert!(
+            dimensions.width % 8 == 0,
+            "Width must be a multiple of 8 for binary packing."
+        );
+        assert!(
+            binary_buffer_length(dimensions) == L,
+            "Size must match given dimensions"
+        );
+
+        unsafe {
+            let uninit = uninit.as_mut();
+
+            BinaryBuffer::init(NonNull::new(&raw mut uninit.low).unwrap(), dimensions);
+            BinaryBuffer::init(NonNull::new(&raw mut uninit.high).unwrap(), dimensions);
         }
     }
 }

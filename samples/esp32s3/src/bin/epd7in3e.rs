@@ -8,6 +8,7 @@
 #![deny(clippy::large_stack_frames)]
 
 use core::mem::MaybeUninit;
+use core::ptr::NonNull;
 
 use defmt::{error, info};
 use embassy_executor::Spawner;
@@ -84,7 +85,7 @@ async fn main(_spawner: Spawner) -> ! {
     #[expect(static_mut_refs)]
     unsafe {
         HexBuffer::init(
-            &mut EPD_BUFFER,
+            NonNull::new(EPD_BUFFER.as_mut_ptr()).expect("EPD_BUFFER should be allocated"),
             Size::new(epd7in3e::DISPLAY_WIDTH, epd7in3e::DISPLAY_HEIGHT),
         );
     }
