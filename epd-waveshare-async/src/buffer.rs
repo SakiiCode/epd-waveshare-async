@@ -379,10 +379,10 @@ impl<const L: usize> HexBuffer<L> {
     ///
     /// ```
     /// use embedded_graphics::prelude::Size;
-    /// use epd_waveshare_async::buffer::{binary_buffer_length, HexBuffer};
+    /// use epd_waveshare_async::buffer::{hex_buffer_length, HexBuffer};
     ///
     /// const DIMENSIONS: Size = Size::new(8, 8);
-    /// let buffer = HexBuffer::<{binary_buffer_length(DIMENSIONS)}>::new(DIMENSIONS);
+    /// let buffer = HexBuffer::<{hex_buffer_length(DIMENSIONS)}>::new(DIMENSIONS);
     /// ```
     pub const fn new(dimensions: Size) -> Self {
         assert!(
